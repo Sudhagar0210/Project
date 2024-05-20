@@ -51,8 +51,7 @@ Details on how to configure the project, especially regarding the YouTube API.
    * Enable the YouTube Data API v3.
    * Create credentials to obtain an API key.
 2.Set up environment variables
-
-   * export YOUTUBE_API_KEY='YOUR_API_KEY'
+   * export Your YOUTUBE API KEY
 
 Usage:-
 
