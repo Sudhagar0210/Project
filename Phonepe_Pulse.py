@@ -36,9 +36,28 @@ def fetch_data(query):
         st.error(f"Error: {str(e)}")
         return pd.DataFrame()
 
+# Build query with year and quarter
+def build_query(base_query, year, quarter):
+    where_clauses = []
+    if year and year != "Select":
+        where_clauses.append(f"Year = '{year}'")
+    if quarter and quarter != "Select":
+        quarter_map = {
+            "Q1 (Jan-Mar)": "1",
+            "Q2 (Apr-Jun)": "2",
+            "Q3 (Jul-Sep)": "3",
+            "Q4 (Oct-Dec)": "4"
+        }
+        where_clauses.append(f"Quarter = '{quarter_map[quarter]}'")
+    
+    if where_clauses:
+        base_query += " WHERE " + " AND ".join(where_clauses)
+    
+    return base_query
+
 # Queries
 queries = {
-    "Transaction": "select * from Aggregate_Transaction",
+    "Transaction": "SELECT * FROM Aggregate_Transaction",
     "User": "SELECT * FROM Aggregate_User",
     "Insurance": "SELECT * FROM Aggregate_Insurance"
 }
@@ -65,59 +84,26 @@ elif visual == "Payments":
 else:
     df = None
 
-#  Data exploration
+# Data exploration
 st.sidebar.title("Explore Data Visualization")
 
 # Year and Quarter options
 years = ["Select", "2018", "2019", "2020", "2021", "2022", "2023", "2024"]
 quarters = ["Select", "Q1 (Jan-Mar)", "Q2 (Apr-Jun)", "Q3 (Jul-Sep)", "Q4 (Oct-Dec)"]
 
-if visual == "Payments":
-    selected_year = st.sidebar.selectbox("Select Year:", years)
-    if selected_year != "Select":
-        selected_quarter = st.sidebar.selectbox("Select Quarter:", quarters)
-    else:
-        selected_quarter = "Select"
+selected_year = st.sidebar.selectbox("Select Year:", years)
+selected_quarter = st.sidebar.selectbox("Select Quarter:", quarters) if selected_year != "Select" else "Select"
 
 # Button to submit selections
 submit_button = st.sidebar.button("Submit")
 
 # Apply filters and visualize data
-if submit_button and df is not None and not df.empty:
+if submit_button and df is not None:
     if visual == "Insurance":
-        max_value = df["Transaction_amount"].max()
-        fig = px.choropleth(
-            df,
-            geojson=data,
-            featureidkey='properties.ST_NM',
-            locations='States',
-            color='Transaction_amount',
-            color_continuous_scale='cividis',
-            range_color=(0, max_value)
-        )
-        fig.update_geos(fitbounds="locations", visible=False)
-        st.plotly_chart(fig, use_container_width=True)
-
-    elif visual == "Payments":
-        if payment_type == "Transaction" and selected_year != "Select":
-            try:
-                df['Year'] = df['Date'].dt.year
-                df['Month'] = df['Date'].dt.month
-            except Exception as e:
-                st.error(f"Error in extracting Year and Month: {str(e)}")
-
-            filtered_df = df[df["Year"] == int(selected_year)]
-            if selected_quarter != "Select":
-                quarters_map = {
-                    "Q1 (Jan-Mar)": [1, 2, 3],
-                    "Q2 (Apr-Jun)": [4, 5, 6],
-                    "Q3 (Jul-Sep)": [7, 8, 9],
-                    "Q4 (Oct-Dec)": [10, 11, 12]
-                }
-                filtered_df = filtered_df[filtered_df["Month"].isin(quarters_map[selected_quarter])]
-            max_value = filtered_df["Transaction_amount"].max()
+        if not df.empty:
+            max_value = df["Transaction_amount"].max()
             fig = px.choropleth(
-                filtered_df,
+                df,
                 geojson=data,
                 featureidkey='properties.ST_NM',
                 locations='States',
@@ -127,30 +113,22 @@ if submit_button and df is not None and not df.empty:
             )
             fig.update_geos(fitbounds="locations", visible=False)
             st.plotly_chart(fig, use_container_width=True)
-
-        elif payment_type == "User" and selected_year != "Select":
-            try:
-                df['Year'] = df['Date'].dt.year
-                df['Month'] = df['Date'].dt.month
-            except Exception as e:
-                st.error(f"Error in extracting Year and Month: {str(e)}")
-
-            filtered_df = df[df["Year"] == int(selected_year)]
-            if selected_quarter != "Select":
-                quarters_map = {
-                    "Q1 (Jan-Mar)": [1, 2, 3],
-                    "Q2 (Apr-Jun)": [4, 5, 6],
-                    "Q3 (Jul-Sep)": [7, 8, 9],
-                    "Q4 (Oct-Dec)": [10, 11, 12]
-                }
-                filtered_df = filtered_df[filtered_df["Month"].isin(quarters_map[selected_quarter])]
+        
+    elif visual == "Payments":
+        query = queries[payment_type]
+        query = build_query(query, selected_year, selected_quarter)
+        df = fetch_data(query)
+        
+        if not df.empty:
+            max_value = df["Transaction_amount"].max()
             fig = px.choropleth(
-                filtered_df,
+                df,
                 geojson=data,
                 featureidkey='properties.ST_NM',
                 locations='States',
                 color='Transaction_amount',
-                color_continuous_scale='cividis'
+                color_continuous_scale='cividis',
+                range_color=(0, max_value)
             )
             fig.update_geos(fitbounds="locations", visible=False)
             st.plotly_chart(fig, use_container_width=True)
