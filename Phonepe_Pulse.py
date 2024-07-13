@@ -6,26 +6,12 @@ import numpy as np
 import requests
 import json
 import pyodbc
-
-
-
-# # SQL Database connection
-# conn = pymysql.connect(
-#     server='Sudhakar\\SQLEXPRESS01',
-#     user='Sachin',      
-#     password='0210',
-#     database='Local_database' 
-# )
-# cursor = conn.cursor()
-
-
  
 conn = pyodbc.connect('DRIVER={SQL Server};SERVER=Sudhakar\\SQLEXPRESS01;DATABASE=Local_database;UID=sa;PWD=123')
 cursor = conn.cursor()
 
-#SQL Query Execution
 
-# SQL Query Execution
+#SQL Query Execution
 def execute_query(query):
     cursor.execute(query)
     return cursor.fetchall()
@@ -38,11 +24,11 @@ st.header(':violet[Phonepe Pulse Data Visualization ]')
 st.write('**(Note)**:-This data between **2018** to **2024(Till Qtr 1)** in **All Over INDIA**')
 
 # Selection option
-option = st.radio('**Select your option**',('All India','Insights'),horizontal=True)
+option = st.radio('**Select your option**',('Payment','Insights'),horizontal=True)
 
 
 
-if option == 'All India':
+if option == 'Payment':
 
     # Select tab
     tab1, tab2 = st.tabs(['Transaction','User'])
@@ -54,7 +40,7 @@ if option == 'All India':
             ina_tran_year = st.selectbox('**Select Transaction Year**',('2018','2019','2020','2021','2022','2023','2024'),key='ina_tran_year')
 
         with col2:
-            ina_tran_qter = st.selectbox('**Select Quarter**',('1','2','3','4'),key='ina_tran_qter')
+            ina_tran_qter = st.selectbox('**Select Transaction Quarter**',('1','2','3','4'),key='ina_tran_qter')
 
         with col3:
             ina_tran_type = st.selectbox('**Select Transaction Type**',('Merchant payments','Financial Services','Recharge & bill payments',
@@ -73,7 +59,6 @@ if option == 'All India':
 
 
         # Select Visual Type
-
         tab1_1 , tab1_2 = st.tabs(['Geo visualization','Bar chart'])
 
         with tab1_1 :
@@ -91,21 +76,19 @@ if option == 'All India':
             if 'States' in df_states_name_tra.columns and 'States' in df_ina_tran_qry_result.columns:
                 df_states_name_tra = df_states_name_tra.merge(df_ina_tran_qry_result, on='States', how='left')
             else:
-                st.write("Merge operation failed: 'States' column missing in one of the DataFrames")               
+                st.write("Merge operation failed: 'States' column missing in one of the DataFrames")             
 
-          
-            
+                    
             fig_tran = px.choropleth(
                 data_frame=df_states_name_tra,     
                 geojson=data,
                 featureidkey='properties.ST_NM',
                 locations='States',
                 color='Transaction_amount',
-                color_continuous_scale='cividis',
+                color_continuous_scale='reds',
                 title = 'Transaction Analysis'           
         )
-        fig_tran.update_geos(fitbounds="locations", visible=False)
-        #st.plotly_chart(fig_tran, use_container_width=True)
+        fig_tran.update_geos(fitbounds="locations", visible=False)       
         fig_tran.update_layout(title_font=dict(size=33),title_font_color='#6739b7',height=800)
         st.plotly_chart(fig_tran,use_container_width=True)
 
@@ -124,7 +107,7 @@ if option == 'All India':
 
 
 
-                        #----------------------- All  Over India user -----------------------#
+                        #------------------------------------ All  Over India user -----------------------------------#
 
     with tab2:
         col_1, col_2 = st.columns(2)
@@ -134,7 +117,7 @@ if option == 'All India':
             ina_user_year = st.selectbox('**Select User Year**',('2018','2019','2020','2021','2022','2023','2024'),key='ina_user_year')
 
         with col_2:
-            ina_user_qter = st.selectbox('**Select Quarter**',('1','2','3','4'),key='ina_user_qter')
+            ina_user_qter = st.selectbox('**Select User Quarter**',('1','2','3','4'),key='ina_user_qter')
 
         # Visual Tabs
         tab2_1, tab2_2= st.tabs(['Geo visualization','Bar chart'])
@@ -162,7 +145,7 @@ if option == 'All India':
 
                 
 
-                # Ensure column exists in both DataFrames for merge             
+                # exists DataFrames for merge             
                 if 'States' in df_States_name_user.columns and 'States' in df_ina_user_qry_result.columns:
                     df_states_name_user = df_States_name_user.merge(df_ina_user_qry_result, on='States', how='left')
                 else:
@@ -229,13 +212,13 @@ else:
         ints_tran_quarter = st.selectbox('**Select Transaction Quarter**',('1','2','3','4'),key='ints_tran_quarter')
 
         # Transaction Table Query
-    ina_tran_table_qry_result= execute_query(f"Select top 10 States, Transaction_count, Transaction_amount FROM Aggregate_Transaction  WHERE Year ='{ints_tran_year}' AND Quarter = '{ints_tran_quarter}' order by Transaction_amount desc")
+    ina_tran_table_qry_result= execute_query(f"Select States, Transaction_count, Transaction_amount FROM Aggregate_Transaction  WHERE Year ='{ints_tran_year}' AND Quarter = '{ints_tran_quarter}' order by Transaction_amount desc")
     if ina_tran_table_qry_result:
 
-        df_ina_tran_table_qry_result = pd.DataFrame(np.array(ina_tran_table_qry_result),columns=['States','Transaction_count','Transaction_amount'])
+        df_ina_tran_table_qry_result = pd.DataFrame(np.array(ina_tran_table_qry_result),columns=['States','Transaction Count','Transaction Amount'])
         df_ina_tran_table_qry_result1 = df_ina_tran_table_qry_result.set_index(pd.Index(range(1, len(df_ina_tran_table_qry_result)+1)))
     else:
-        df_ina_tran_table_qry_result1 = pd.DataFrame(columns=['States','Transaction_count','Transaction_amount'])
+        df_ina_tran_table_qry_result1 = pd.DataFrame(columns=['States','Transaction Count','Transaction Amount'])
 
     #  Total Transaction Amount Query
     ina_tran_amt_qry_result= execute_query (f"Select SUM(Transaction_amount), AVG(Transaction_amount)  from Aggregate_Transaction where Year = '{ints_tran_year}' AND Quarter = '{ints_tran_quarter}'")
@@ -269,26 +252,27 @@ else:
 
     with tab3:
 
-            st.header(':violet[Total Transaction Calcuation]')
+            st.header(':violet[Total Transaction Details]')
 
             colt_3,colt_4,colt_5 = st.columns(3)
 
             with colt_3:
 
-                st.subheader ('Top 10 Transaction State Details')
+                st.subheader (' Phonepe Transaction State Details')
+                st.text('All PhonePe transactions (UPI+Cards+Wallets)')
                 st.dataframe (df_ina_tran_table_qry_result1)
 
             with colt_4:
 
-                st.subheader ('Transaction Amount')
-                st.dataframe (df_ina_tran_amt_qry_result1)
-                st.subheader ('Transaction Count')
-                st.dataframe (df_ina_tran_cunt_qry_result1)
+                st.subheader ('Transaction Categories')
+                st.dataframe(df_ints_tran_Typ_result1)
 
             with colt_5:
 
-                st.subheader ('Transaction Categories')
-                st.dataframe(df_ints_tran_Typ_result1)            
+                st.subheader ('Transaction Amount')
+                st.dataframe (df_ina_tran_amt_qry_result1)
+                st.subheader ('Transaction Count')
+                st.dataframe (df_ina_tran_cunt_qry_result1)          
 
 
 
@@ -303,10 +287,28 @@ else:
         ints_user_year = st.selectbox('**Select User Year**',('2018','2019','2020','2021','2022','2023','2024'),key='ints_user_year')
 
     with colu_2:        
-        ints_user_quarter = st.selectbox('**Select User Quarter**',('1','2','3','4'),key='ints_user_quarter')
+        ints_user_quarter = st.selectbox('**Select User Quarter**',('1','2','3','4'),key='ints_user_quarter')   
+  
+
+    with tab4:
+            
+            #Top User Calculation
+            insts_user_qry_result = execute_query(f"Select States, User_count, Transaction_percentage FROM Aggregate_user  WHERE Year ='{ints_user_year}' AND Quarter = '{ints_user_quarter}' order by Transaction_percentage desc")
+            if insts_user_qry_result:
+                df_insts_user_qry_result = pd.DataFrame(np.array(insts_user_qry_result),columns=['States','User Count','Transaction Percentage'])
+                df_insts_user_qry_result1 = df_insts_user_qry_result.set_index(pd.Index(range(1, len(df_insts_user_qry_result)+1)))
+            else:
+                df_insts_user_qry_result1 = pd.DataFrame(columns=['States','User Count','Transaction Percentage'])   
+
+                # User Transaction Brand Query
+            ints_user_brand_result = execute_query (f"SELECT Transaction_brand, SUM(Transaction_percentage) FROM Aggregate_User WHERE Year ='{ints_user_year}' AND Quarter = '{ints_user_quarter}' GROUP BY Transaction_brand ")
+            if ints_user_brand_result:            
+                    df_ints_user_brand_result = pd.DataFrame(np.array(ints_user_brand_result),columns=['Transaction Brand','Total Percentage'])
+                    df_ints_user_brand_result1 = df_ints_user_brand_result.set_index(pd.Index(range(1, len(df_ints_user_brand_result)+1)))
+            else:
+                df_ints_user_brand_result1 = pd.DataFrame(columns=['Transaction Brand','Total Percentage'])    
 
 
-    with tab4:            
             # Total User Calculation
             ina_user_tot_result = execute_query(f"Select SUM(User_count), AVG(User_count) from Aggregate_User where Year = '{ints_user_year}' AND Quarter = '{ints_user_quarter}'")
             if ina_user_tot_result:
@@ -315,21 +317,23 @@ else:
             else:
                 df_ina_user_tot_result1 = pd.DataFrame(columns=['Total User', 'Average User'])
 
-            # # All India Total Calculation
-            # st.header(':violet[Total User Calculation]')
+            # All India Total Calculation
+            st.header(':violet[Total User Calculation]')
 
-            # col_3, col_4 = st.columns(2)
+            colu_3, colu_4,colu_5 = st.columns(3)
 
-            # with col_3:
-            #     st.subheader('User Analysis Details')
-            #     st.dataframe(df_ina_user_qry_result1)
+            with colu_3:
+                st.subheader ('Phonepe User State Details')
+                st.dataframe(df_insts_user_qry_result1)
 
-            # with col_4:
-            #     st.subheader('Total User Count')
-            #     st.dataframe(df_ina_user_tot_result1['Total User'])                   
+            with colu_4:
+                st.subheader ('User Brand Details')
+                st.dataframe(df_ints_user_brand_result1)
+
+            with colu_5:
+                st.subheader('Total User Count')
+                st.dataframe(df_ina_user_tot_result1['Total User'])
 
 
-
-
-
-        
+#------------------------------------------------- End -------------------------------------------------#
+                              
