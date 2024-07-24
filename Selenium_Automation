@@ -65,3 +65,67 @@ def get_bus_details():
 get_bus_details()
 
 driver.quit()
+
+
+--------------------------------
+
+# Header details Scrape Code
+
+
+import time
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException
+
+driver = webdriver.Chrome()
+driver.maximize_window()
+
+driver.get('https://www.redbus.in/')
+
+time.sleep(5)
+
+driver.find_element(By.XPATH, "(//div[@class='rtcName'])[1]").click()
+driver.implicitly_wait(10)
+
+def get_bus_details():
+    route_titles = driver.find_elements(By.XPATH, "//a[@class='route']")   
+
+    for title  in (route_titles):
+        print(f"Route Title: {title.text}, Route Link: {title.get_attribute('href')}")
+
+def go_to_page(page_number):
+    try:
+        page_button = driver.find_element(By.XPATH, f"//div[text()='{page_number}']")
+        driver.execute_script("arguments[0].scrollIntoView();", page_button)
+        time.sleep(2)  
+        page_button.click()
+        time.sleep(5)  
+    except (NoSuchElementException, ElementClickInterceptedException) as e:
+        print(f"Error navigating to page {page_number}: {e}")
+
+
+for page in range(2, 6):
+    go_to_page(page)
+    get_bus_details()
+
+# Close the WebDriver
+driver.quit()
+# def get_bus_details(header_number):
+#     try:
+#         header_button = driver.find_element(By.XPATH, f"(//a[@class='route'])[{header_number}]")
+#         #page_button = driver.find_element(By.XPATH, f"//div[text()='{page_number}']") #(//a[@class='route'])[1]
+#         driver.execute_script("arguments[0].scrollIntoView();", header_button)
+#         time.sleep(2)  
+#         header_button.click()
+#         time.sleep(5)  
+#     except (NoSuchElementException, ElementClickInterceptedException) as e:
+#         print(f"Error navigating to page {header_number}: {e}")
+
+
+# for head in range(1, 10):
+#     get_bus_details(head)
+#     get_bus_route()
+
+    
+    
+
